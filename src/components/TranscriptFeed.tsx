@@ -8,15 +8,29 @@ interface TranscriptFeedProps {
   utterances: Utterance[]
   /** In-progress (not yet committed) line being "typed" in. */
   partial: string | null
+  /** When false, transcription isn't available in this browser. */
+  supported?: boolean
 }
 
 /** Scrolling utterance list with per-line sentiment dots + buzzword highlights. */
-export function TranscriptFeed({ utterances, partial }: TranscriptFeedProps) {
+export function TranscriptFeed({ utterances, partial, supported = true }: TranscriptFeedProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
   }, [utterances.length, partial])
+
+  if (!supported) {
+    return (
+      <div className="h-full grid place-items-center px-6 text-center">
+        <p className="text-[12.5px] leading-relaxed max-w-[280px]" style={{ color: ECHO.muted }}>
+          Live transcription isn't supported in this browser.
+          <br />
+          <span style={{ color: ECHO.faint }}>Try Chrome or Edge — the mic and level meter still work here.</span>
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div ref={scrollRef} className="feed-scroll h-full overflow-y-auto px-3.5 py-3">

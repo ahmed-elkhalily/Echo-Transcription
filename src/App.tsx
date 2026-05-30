@@ -2,6 +2,7 @@ import { ECHO } from './lib/palette'
 import { fmtMMSS } from './lib/format'
 import { useDemoStream } from './hooks/useDemoStream'
 import { useMicrophone } from './hooks/useMicrophone'
+import { useTranscription } from './hooks/useTranscription'
 import { MicBar } from './components/MicBar'
 import { Panel } from './components/Panel'
 import { TranscriptFeed } from './components/TranscriptFeed'
@@ -12,6 +13,7 @@ import { StatsBar } from './components/StatsBar'
 export default function App() {
   const stream = useDemoStream()
   const mic = useMicrophone()
+  const tx = useTranscription(mic.active, () => mic.recSec)
 
   return (
     // On large screens the dashboard is a fixed-height grid with internal
@@ -39,13 +41,13 @@ export default function App() {
               <span className="font-mono text-[10px] flex items-center gap-1.5" style={{ color: ECHO.faint }}>
                 <span
                   className="rec-dot w-1.5 h-1.5 rounded-full"
-                  style={{ background: stream.active ? ECHO.accent : ECHO.faint }}
+                  style={{ background: mic.active ? ECHO.accent : ECHO.faint }}
                 />
-                {stream.utterances.length} utterances
+                {tx.utterances.length} utterances
               </span>
             }
           >
-            <TranscriptFeed utterances={stream.utterances} partial={stream.partial} />
+            <TranscriptFeed utterances={tx.utterances} partial={tx.partial} supported={tx.supported} />
           </Panel>
 
           {/* right column */}
