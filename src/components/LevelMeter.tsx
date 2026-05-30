@@ -2,29 +2,37 @@ import { useEffect, useRef } from 'react'
 
 interface LevelMeterProps {
   active: boolean
+  /**
+   * Real audio level reader (0..1), polled once per frame. When provided, it
+   * drives the envelope; when absent the meter shows idle flat bars.
+   */
+  getLevel?: () => number
   bars?: number
 }
 
 /**
- * Mic level meter: vertical bars driven by a smoothed random walk.
+ * Mic level meter: vertical bars driven by a real AnalyserNode when `getLevel`
+ * is supplied, falling back to flat idle bars otherwise.
  *
- * Stand-in animation until a real AnalyserNode feeds it. The render loop mutates
- * bar heights/colors imperatively via refs to stay off the React commit path.
+ * The render loop mutates bar heights/colors imperatively via refs to stay off
+ * the React commit path.
  */
-export function LevelMeter({ active, bars = 28 }: LevelMeterProps) {
+export function LevelMeter({ active, getLevel, bars = 28 }: LevelMeterProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const state = useRef({ levels: new Array<number>(bars).fill(0.06), env: 0.4, t: 0 })
+  const state = useRef({ levels: new Array<number>(bars).fill(0.06), env: 0.06 })
+
+  // Keep the latest getLevel without restarting the RAF loop on every render.
+  const getLevelRef = useRef(getLevel)
+  getLevelRef.current = getLevel
 
   useEffect(() => {
     let raf = 0
     const tick = () => {
       const st = state.current
-      st.t += 0.06
-      // slow speech "envelope" — rises and falls like phrases
-      const target = active
-        ? 0.35 + 0.45 * Math.abs(Math.sin(st.t * 0.9)) + 0.12 * Math.sin(st.t * 4.3)
-        : 0.05
-      st.env += (target - st.env) * 0.12
+      // Envelope target: real RMS when recording, else idle floor.
+      const read = getLevelRef.current
+      const target = active && read ? Math.max(0.05, read()) : 0.05
+      st.env += (target - st.env) * 0.25
       const el = ref.current
       if (el) {
         const kids = el.children
@@ -33,7 +41,7 @@ export function LevelMeter({ active, bars = 28 }: LevelMeterProps) {
           // center-weighted: middle bars taller, like a real spectrum
           const d = 1 - Math.abs(i - (n - 1) / 2) / ((n - 1) / 2)
           const shape = 0.35 + 0.65 * d
-          const jitter = active ? 0.55 + 0.45 * Math.random() : 0.4
+          const jitter = active ? 0.6 + 0.4 * Math.random() : 1
           const v = Math.max(0.05, Math.min(1, st.env * shape * jitter))
           st.levels[i] += (v - st.levels[i]) * 0.45
           const h = st.levels[i]

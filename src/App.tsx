@@ -1,6 +1,7 @@
 import { ECHO } from './lib/palette'
 import { fmtMMSS } from './lib/format'
 import { useDemoStream } from './hooks/useDemoStream'
+import { useMicrophone } from './hooks/useMicrophone'
 import { MicBar } from './components/MicBar'
 import { Panel } from './components/Panel'
 import { TranscriptFeed } from './components/TranscriptFeed'
@@ -10,6 +11,7 @@ import { StatsBar } from './components/StatsBar'
 
 export default function App() {
   const stream = useDemoStream()
+  const mic = useMicrophone()
 
   return (
     // On large screens the dashboard is a fixed-height grid with internal
@@ -17,7 +19,15 @@ export default function App() {
     <div className="h-full overflow-y-auto overflow-x-hidden lg:overflow-hidden" style={{ background: ECHO.bg, color: ECHO.text }}>
       <div className="flex flex-col gap-3 p-3 sm:p-4 min-h-full lg:h-full">
         {/* top: mic control bar */}
-        <MicBar active={stream.active} onToggle={stream.toggle} recSec={stream.recSec} wpm={stream.wpm} />
+        <MicBar
+          status={mic.status}
+          active={mic.active}
+          onToggle={mic.toggle}
+          recSec={mic.recSec}
+          wpm={stream.wpm}
+          errorMsg={mic.errorMsg}
+          getLevel={mic.getLevel}
+        />
 
         {/* body */}
         <div className="flex-1 min-h-0 grid gap-3 grid-cols-1 lg:grid-cols-[minmax(340px,40%)_1fr]">

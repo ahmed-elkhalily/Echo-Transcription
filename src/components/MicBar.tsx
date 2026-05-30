@@ -1,17 +1,36 @@
 import { ECHO } from '../lib/palette'
 import { fmtClock } from '../lib/format'
+import type { MicStatus } from '../hooks/useMicrophone'
 import { LevelMeter } from './LevelMeter'
 import { SessionSwitcher } from './SessionSwitcher'
 
 interface MicBarProps {
+  status: MicStatus
   active: boolean
   onToggle: () => void
   recSec: number
   wpm: number
+  errorMsg: string | null
+  getLevel: () => number
+}
+
+/** Lowercase sublabel under the timer, keyed to the mic lifecycle. */
+const STATUS_LABEL: Record<MicStatus, string> = {
+  idle: 'ready',
+  requesting: 'requesting…',
+  recording: 'recording · local',
+  denied: 'mic blocked',
+  'no-device': 'no mic found',
+  unsupported: 'unsupported browser',
+  error: 'mic error',
 }
 
 /** Top control bar: start/stop, rec timer, level meter, session switcher. */
-export function MicBar({ active, onToggle, recSec, wpm }: MicBarProps) {
+export function MicBar({ status, active, onToggle, recSec, wpm, errorMsg, getLevel }: MicBarProps) {
+  // Blocked states can't be recovered by a click, so the button is inert.
+  const blocked = status === 'denied' || status === 'no-device' || status === 'unsupported'
+  const disabled = blocked || status === 'requesting'
+
   return (
     <div className="flex flex-wrap lg:flex-nowrap items-stretch gap-3 shrink-0">
       {/* start/stop + session timer */}
@@ -21,7 +40,8 @@ export function MicBar({ active, onToggle, recSec, wpm }: MicBarProps) {
       >
         <button
           onClick={onToggle}
-          className="group flex items-center gap-3 pl-2 pr-4 h-12 rounded-[4px] border transition-colors"
+          disabled={disabled}
+          className="group flex items-center gap-3 pl-2 pr-4 h-12 rounded-[4px] border transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           style={{
             background: active ? ECHO.negDim : ECHO.accentDim,
             borderColor: active ? 'rgba(226,96,74,0.5)' : 'rgba(49,224,160,0.5)',
@@ -60,8 +80,11 @@ export function MicBar({ active, onToggle, recSec, wpm }: MicBarProps) {
             {active && <span className="rec-dot w-2 h-2 rounded-full" style={{ background: ECHO.neg }} />}
             {fmtClock(recSec)}
           </span>
-          <span className="font-mono text-[10px] tracking-[0.18em] uppercase mt-1.5" style={{ color: ECHO.faint }}>
-            {active ? 'recording · local' : 'paused'}
+          <span
+            className="font-mono text-[10px] tracking-[0.18em] uppercase mt-1.5"
+            style={{ color: blocked || status === 'error' ? ECHO.warn : ECHO.faint }}
+          >
+            {STATUS_LABEL[status]}
           </span>
         </div>
       </div>
@@ -80,7 +103,13 @@ export function MicBar({ active, onToggle, recSec, wpm }: MicBarProps) {
             <span style={{ color: ECHO.faint }}> wpm</span>
           </span>
         </div>
-        <LevelMeter active={active} />
+        {errorMsg ? (
+          <div className="flex items-center h-9 font-mono text-[11px]" style={{ color: ECHO.warn }}>
+            {errorMsg}
+          </div>
+        ) : (
+          <LevelMeter active={active} getLevel={getLevel} />
+        )}
       </div>
 
       {/* session switcher */}
