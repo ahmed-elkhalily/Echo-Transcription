@@ -4,8 +4,8 @@
 // and an AnalyserNode. Exposes a level reader the LevelMeter polls on its own
 // RAF loop (no per-frame React state) and a real elapsed-recording timer.
 //
-// Transcription/sentiment still come from useDemoStream; this hook only handles
-// capture + the level meter, and runs as an independent lifecycle.
+// Transcription/sentiment live in useTranscription + useAnalytics; this hook
+// only handles capture + the level meter, and runs as an independent lifecycle.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 

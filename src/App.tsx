@@ -1,8 +1,8 @@
 import { ECHO } from './lib/palette'
 import { fmtMMSS } from './lib/format'
-import { useDemoStream } from './hooks/useDemoStream'
 import { useMicrophone } from './hooks/useMicrophone'
 import { useTranscription } from './hooks/useTranscription'
+import { useAnalytics } from './hooks/useAnalytics'
 import { MicBar } from './components/MicBar'
 import { Panel } from './components/Panel'
 import { TranscriptFeed } from './components/TranscriptFeed'
@@ -11,9 +11,9 @@ import { BuzzwordPanel } from './components/BuzzwordPanel'
 import { StatsBar } from './components/StatsBar'
 
 export default function App() {
-  const stream = useDemoStream()
   const mic = useMicrophone()
   const tx = useTranscription(mic.active, () => mic.recSec)
+  const analytics = useAnalytics(tx.utterances, mic.recSec)
 
   return (
     // On large screens the dashboard is a fixed-height grid with internal
@@ -26,7 +26,7 @@ export default function App() {
           active={mic.active}
           onToggle={mic.toggle}
           recSec={mic.recSec}
-          wpm={stream.wpm}
+          wpm={analytics.wpm}
           errorMsg={mic.errorMsg}
           getLevel={mic.getLevel}
         />
@@ -68,7 +68,7 @@ export default function App() {
               }
               bodyClass="px-1.5 py-1.5"
             >
-              <SentimentChart points={stream.sentPoints} />
+              <SentimentChart points={analytics.sentPoints} />
             </Panel>
 
             <Panel
@@ -79,7 +79,7 @@ export default function App() {
                 </span>
               }
             >
-              <BuzzwordPanel counts={stream.counts} flashKey={stream.flashKey} lastMatched={stream.lastMatched} />
+              <BuzzwordPanel counts={analytics.counts} flashKey={analytics.flashKey} lastMatched={analytics.lastMatched} />
             </Panel>
 
             <section
@@ -87,10 +87,10 @@ export default function App() {
               style={{ background: ECHO.panel, borderColor: ECHO.border }}
             >
               <StatsBar
-                wpm={stream.wpm}
-                talk={fmtMMSS(stream.recSec)}
-                pause={stream.longestPause}
-                unique={stream.uniqueWords}
+                wpm={analytics.wpm}
+                talk={fmtMMSS(mic.recSec)}
+                pause={analytics.longestPause}
+                unique={analytics.uniqueWords}
               />
             </section>
           </div>

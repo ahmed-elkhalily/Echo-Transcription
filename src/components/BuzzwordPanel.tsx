@@ -1,5 +1,5 @@
 import { ECHO } from '../lib/palette'
-import { BUZZWORDS } from '../lib/mockData'
+import { BUZZWORDS } from '../lib/buzzwords'
 import type { BuzzCounts } from '../lib/types'
 
 interface BuzzwordPanelProps {

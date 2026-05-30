@@ -24,3 +24,18 @@ export interface Session {
 
 /** Match counts keyed by buzzword phrase. */
 export type BuzzCounts = Record<string, number>
+
+/** Main thread → analytics worker: score + match one committed line. */
+export interface AnalyzeRequest {
+  id: string
+  text: string
+}
+
+/** Analytics worker → main thread: the line's sentiment + buzzword hits. */
+export interface AnalyzeResult {
+  id: string
+  /** Sentiment score on the −5…+5 band. */
+  s: number
+  /** Buzzword phrases matched verbatim in the line. */
+  buzz: string[]
+}
